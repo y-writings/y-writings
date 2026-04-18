@@ -26,8 +26,10 @@ jobs:
     name: Generate profile metrics
     runs-on: ubuntu-latest
     permissions:
-      # Required to commit the rendered SVG back to the repository.
+      # Required to update the metrics file on the automation branch.
       contents: write
+      # Required to open or update the metrics pull request.
+      pull-requests: write
     steps:
       - name: Validate metrics token configuration
         env:
@@ -49,6 +51,9 @@ jobs:
           base_indepth: false
           config_timezone: Asia/Tokyo
           filename: github-metrics.svg
+          output_action: pull-request
+          committer_branch: main
+          committer_message: "docs(metrics): update github metrics"
 
           plugin_activity: true
           plugin_activity_limit: 5
