@@ -1,0 +1,63 @@
+name: metrics
+
+on:
+  # Regenerate profile metrics on a daily schedule.
+  schedule:
+    - cron: "0 0 * * *"
+  # Allow maintainers to refresh metrics on demand.
+  workflow_dispatch:
+  # Regenerate metrics when this workflow definition changes on the default branch.
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/metrics.yml
+
+# Default to no permissions and grant write only where the job needs it.
+permissions: {}
+
+concurrency:
+  # Prevent overlapping metrics updates for the same branch.
+  group: metrics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  github-metrics:
+    name: Generate profile metrics
+    runs-on: ubuntu-latest
+    permissions:
+      # Required to commit the rendered SVG back to the repository.
+      contents: write
+    steps:
+      - name: Validate metrics token configuration
+        env:
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+        run: |
+          if [ -z "${METRICS_TOKEN}" ]; then
+            echo "METRICS_TOKEN is required to generate GitHub metrics."
+            echo "Create a Personal Access Token and store it as the METRICS_TOKEN repository secret."
+            exit 1
+          fi
+
+      - name: Generate GitHub profile metrics
+        uses: lowlighter/metrics@65836723097537a54cd8eb90f61839426b4266b6 # v3.34
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: y-writings
+          template: classic
+          base: header, activity, community, repositories, metadata
+          base_indepth: false
+          config_timezone: Asia/Tokyo
+          filename: github-metrics.svg
+
+          plugin_activity: true
+          plugin_activity_limit: 5
+          plugin_activity_days: 14
+          plugin_activity_filter: all
+
+          plugin_habits: true
+          plugin_habits_days: 14
+          plugin_habits_from: 200
+
+          plugin_repositories: true
+          plugin_repositories_featured: y-writings/dotfiles,y-writings/karabiner-config,y-writings/templates
